@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Deceptive Dash - By Aravind</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            color: white;
+            overscroll-behavior-y: contain; 
+        }
+
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            max-height: 100vh; 
+            position: relative; 
+            box-sizing: border-box;
+        }
+
+        #gameCanvas {
+            border: 3px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            background: #000;
+            display: block;
+            max-width: 100%;
+            max-height: calc(100vh - 160px); 
+            object-fit: contain; 
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px; 
+            left: 10px; 
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 15px; 
+            border-radius: 10px;
+            border: 2px solid #fff;
+            margin-bottom: 10px;
+            font-size: 14px; 
+        }
+        #ui #levelTitle {
+            font-size: 13px; 
+        }
+
+
+        #controls { 
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #fff;
+            z-index: 100;
+        }
+        body.touch-enabled #controls { 
+            display: none !important;
+        }
+
+        #controlR { 
+            transition: color 0.3s, text-shadow 0.3s;
+        }
+
+
+        #developer {
+            position: absolute;
+            top: 10px; /* MOVED TO TOP RIGHT */
+            right: 10px; /* MOVED TO TOP RIGHT */
+            background: rgba(0, 0, 0, 0.7); 
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            border: 1px solid #fff; 
+            font-size: 12px; 
+            z-index: 100;
+        }
+
+        .title-header { 
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #deathMessage, #victoryMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 25px;
+            border-radius: 15px;
+            border: 3px solid #fff;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 200;
+            width: 80%; 
+            max-width: 350px;
+            box-sizing: border-box;
+        }
+        #deathMessage {
+            background: rgba(200, 0, 0, 0.9); 
+            box-shadow: 0 0 20px rgba(255,0,0,0.7);
+        }
+        #victoryMessage {
+            background: rgba(0, 200, 0, 0.9); 
+            color: black;
+            box-shadow: 0 0 20px rgba(0,255,0,0.7);
+        }
+        
+        #titleScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #102a50, #1a3b70);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            text-align: center;
+            color: white;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        #titleScreen .title { 
+            font-size: 40px; 
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+        }
+        #titleScreen p {
+            font-size: 16px; 
+            margin-bottom: 15px;
+        }
+        #titleScreen button {
+            padding: 15px 30px;
+            font-size: 18px; 
+            background-color: #f1c40f;
+            color: #2c3e50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            margin-bottom: 30px;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        #titleScreen button:hover, #titleScreen button:active {
+            background-color: #f39c12;
+            transform: translateY(-2px);
+        }
+        #titleScreen button:active {
+            transform: translateY(1px);
+        }
+        #titleScreen .instructions {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px; 
+            border-radius: 10px;
+            border: 2px solid #fff;
+            font-size: 13px; 
+            margin-top: 20px;
+        }
+
+        #gameOverScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            padding: 30px; 
+            border-radius: 20px;
+            border: 3px solid #fff;
+            text-align: center;
+            font-size: 20px; 
+            font-weight: bold;
+            z-index: 300; 
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            box-shadow: 0 0 30px rgba(0,255,0,0.5);
+            width: 90%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        #gameOverScreen .title {
+            font-size: 30px; 
+            margin-bottom: 20px;
+        }
+        #gameOverScreen p {
+            margin-bottom: 15px;
+        }
+        #gameOverScreen button {
+            padding: 12px 25px;
+            font-size: 16px; 
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        #gameOverScreen button:hover, #gameOverScreen button:active {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        #gameOverScreen button:active {
+            transform: translateY(1px);
+        }
+
+        /* Touch Controls Styling */
+        #touchControlsContainer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 10px; 
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between; 
+            align-items: flex-end; 
+            z-index: 150;
+            pointer-events: none; 
+        }
+
+        #touchControlsContainer button {
+            background-color: rgba(255, 255, 255, 0.3); 
+            border: 2px solid rgba(255, 255, 255, 0.7); 
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            pointer-events: auto; 
+            transition: background-color 0.1s, transform 0.05s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.25); 
+            margin: 0 5px; 
+        }
+        #touchControlsContainer button:active {
+            background-color: rgba(255, 255, 255, 0.55);
+            transform: scale(0.95); 
+        }
+
+        .touch-left-cluster, .touch-right-cluster {
+            display: flex;
+            align-items: flex-end;
+        }
+        
+        #touchLeft, #touchRight {
+            width: 70px; 
+            height: 70px;
+            font-size: 30px; 
+            border-radius: 50%; 
+        }
+        #touchLeft { margin-right: 15px; } 
+        
+        #touchJump {
+            width: 85px; 
+            height: 85px;
+            font-size: 26px; 
+            border-radius: 50%; 
+            order: 2; 
+            margin-left: 15px; 
+        }
+        #touchRestart {
+            width: auto; 
+            min-width: 80px; 
+            height: 60px;
+            font-size: 14px; 
+            padding: 0 15px; 
+            border-radius: 12px; 
+            line-height: 1.2; 
+            order: 1; 
+        }
+
+        /* Responsive adjustments for Touch Controls and UI elements */
+        @media (max-width: 768px) {
+            #gameCanvas {
+                 max-height: calc(100vh - 160px); 
+            }
+            #ui { top: 5px; left: 5px; padding: 5px 10px; font-size: 11px; }
+            #ui #levelTitle { font-size: 10px; }
+            .title-header { font-size: 20px; margin-bottom: 5px;}
+            #developer { 
+                top: 5px;
+                right: 5px;
+                padding: 5px 8px;
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 480px) { 
+             #gameCanvas {
+                 max-height: calc(100vh - 145px); 
+            }
+            #touchControlsContainer { padding: 10px 5px; }
+            #touchLeft, #touchRight { width: 60px; height: 60px; font-size: 26px; }
+            #touchLeft { margin-right: 10px; }
+            #touchJump { width: 75px; height: 75px; font-size: 24px; margin-left: 10px; }
+            #touchRestart { min-width: 70px; height: 50px; font-size: 12px; padding: 0 10px; }
+
+            .title-header { font-size: 18px; }
+            #ui { font-size: 10px; }
+            #ui #levelTitle { font-size: 9px; }
+            #developer { 
+                padding: 4px 6px;
+                font-size: 9px;
+            }
+        }
+
+        @media (max-width: 360px) { 
+             #gameCanvas {
+                 max-height: calc(100vh - 130px);
+            }
+            #touchControlsContainer { padding: 8px 3px; }
+            #touchLeft, #touchRight { width: 55px; height: 55px; font-size: 24px; margin: 0 3px;}
+            #touchLeft { margin-right: 8px; }
+            #touchJump { width: 65px; height: 65px; font-size: 22px; margin: 0 3px; margin-left: 8px;}
+            #touchRestart { min-width: 65px; height: 45px; font-size: 11px; padding: 0 8px; margin: 0 3px;}
+            .title-header { font-size: 16px; }
+            #developer {
+                 display: none; 
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div class="title-header">DECEPTIVE DASH</div>
+        
+        <div id="ui" class="hidden">
+            <div>Level: <span id="currentLevel">1</span>/<span id="totalLevels">10</span></div>
+            <div>Deaths: <span id="deathCount">0</span></div>
+            <div id="levelTitle">The Invisible Step</div>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600" class="hidden"></canvas>
+
+        <div id="controls" class="hidden"> 
+            <div><strong>Controls:</strong></div>
+            <div>W / SPACE - Jump</div>
+            <div>A - Move Left</div>
+            <div>D - Move Right</div>
+            <div id="controlR">R - Restart Level</div>
+        </div>
+
+        <div id="developer" class="hidden">
+            <div>Developer: Aravind</div> <!-- Simplified text -->
+            <!-- Removed "Trust Nothing!" from here as it might be too much for top-right -->
+        </div>
+
+        <div id="deathMessage" class="hidden">
+            <div>💀 YOU DIED! 💀</div>
+            <div id="deathReason"></div>
+            <div>Press R (or Restart button) to restart</div>
+        </div>
+
+        <div id="victoryMessage" class="hidden">
+            <div>🎉 LEVEL COMPLETE! 🎉</div>
+            <div>Press SPACE (or Jump button) to continue</div>
+        </div>
+
+        <div id="titleScreen">
+            <div class="title">DECEPTIVE DASH</div>
+            <p>By Aravind</p>
+            <p>Are you ready to question reality?</p>
+            <button id="startButton">Start Game</button>
+            <div class="instructions">
+                <div><strong>Controls:</strong> W / SPACE, A, D, R (Keyboard)</div>
+                <div>Use on-screen buttons on touch devices.</div>
+                <div>Objective: Reach the $ coin.</div>
+                <div>Remember: <strong>Trust Nothing!</strong></div>
+            </div>
+        </div>
+
+        <div id="gameOverScreen" class="hidden">
+            <div class="title">🎉 YOU CONQUERED DECEPTION! 🎉</div>
+            <p>Incredible! You've beaten Deceptive Dash!</p>
+            <p>Total Deaths: <span id="finalDeathCount">0</span></p>
+            <button id="restartGameButton">Play Again?</button>
+        </div>
+
+        <div id="touchControlsContainer" class="hidden">
+            <div class="touch-left-cluster">
+                <button id="touchLeft" aria-label="Move Left">&larr;</button> 
+                <button id="touchRight" aria-label="Move Right">&rarr;</button> 
+            </div>
+            <div class="touch-right-cluster">
+                <button id="touchRestart" aria-label="Restart Level">RESTART</button>
+                <button id="touchJump" aria-label="Jump">&#x2191;</button> 
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game Constants
+        const PLAYER_SPEED = 5;
+        const JUMP_FORCE = 15; 
+        const GRAVITY = 0.8;
+        const PARTICLE_LIFE_BASE = 30;
+        const SPIKE_TRIANGLE_HEIGHT = 10; 
+        const TOTAL_LEVELS = 10;
+
+        // Game state
+        let gameState = {
+            currentLevel: 1, deaths: 0,
+            player: { x: 50, y: 500, width: 20, height: 30, velX: 0, velY: 0, grounded: false, alive: true },
+            keys: {}, levelComplete: false, controlsReversed: false, gravityReversed: false, 
+            particles: [], gameStarted: false, gameFinished: false, frameCount: 0,
+            levelStates: { 1: { cueAlpha: 0, cueVisible: false, lastCueTime: 0 }, 10: { rPressedOnPedestal: false } }
+        };
+
+        const levelThemes = {
+            1: { bg: '#1a1a2e', accent: '#16213e', text: 'The First Step is a Leap' }, 2: { bg: '#0f3460', accent: '#533483', text: 'The Harmless Spike' },
+            3: { bg: '#16537e', accent: '#f39c12', text: 'The Crumbling Trust' }, 4: { bg: '#27ae60', accent: '#2c3e50', text: 'The Decoy and the Drop' },
+            5: { bg: '#e74c3c', accent: '#c0392b', text: 'The Lying Sign' }, 6: { bg: '#9b59b6', accent: '#8e44ad', text: 'The Vanishing Path' },
+            7: { bg: '#34495e', accent: '#2c3e50', text: 'The Disorienting Dash' }, 8: { bg: '#d35400', accent: '#e67e22', text: 'Depths of Deception' },
+            9: { bg: '#2c3e50', accent: '#34495e', text: 'The Patient Virtue' }, 10: { bg: '#8e44ad', accent: '#9b59b6', text: 'The True Ultimate Betrayal' }
+        };
+
+        const levels = {
+            1: { startX: 50, startY: 500, platforms: [ { x: 0, y: 580, width: 150, height: 20, visible: true }, { x: 300, y: 580, width: 200, height: 20, visible: true }, { x: 200, y: 450, width: 100, height: 20, visible: false, isCollidableInvisible: true, id: "invisible_plat_L1" } ], spikes: [], coins: [{ x: 400, y: 540, real: true }], signs: [{x: 60, y: 540, text: "Look closely..."}], specialElements: [ { type: 'visualCue', cueType: 'faintPlatformOutline', targetPlatformId: "invisible_plat_L1", interval: 180, duration: 12 } ] },
+            2: { startX: 50, startY: 500, platforms: [ { x: 0, y: 580, width: 150, height: 20, visible: true }, { x: 300, y: 580, width: 200, height: 20, visible: true }, { x: 600, y: 580, width: 200, height: 20, visible: true } ], spikes: [ { x: 150, y: 570, width: 150, triangleHeight: 10, deadly: false } ], coins: [{ x: 720, y: 540, real: true }], signs: [], specialElements: [] },
+            3: { startX: 50, startY: 500, platforms: [ { x: 0, y: 580, width: 100, height: 20, visible: true }, { x: 200, y: 480, width: 80, height: 20, visible: true, crumbling: true, originalTimer: 60 }, { x: 350, y: 380, width: 80, height: 20, visible: true, crumbling: true, originalTimer: 60 }, { x: 500, y: 280, width: 80, height: 20, visible: true, crumbling: true, originalTimer: 60 }, { x: 650, y: 180, width: 150, height: 20, visible: true } ], spikes: [ { x: 0, y: 580, width: 800, triangleHeight: 10, deadly: true } ], coins: [{ x: 720, y: 140, real: true }], signs: [], specialElements: [] },
+            4: { startX: 30, startY: 520, platforms: [ { x: 0, y: 580, width: 80, height: 20, visible: true }, { x: 120, y: 530, width: 100, height: 20, visible: true }, { x: 250, y: 480, width: 120, height: 20, visible: true, id: "jumpOffPoint" }, { x: 400, y: 480, width: 60, height: 20, visible: true, crumbling: true, originalTimer: 20, proximityTrigger: true, triggerDist: 60 }, { x: 460, y: 480, width: 100, height: 20, visible: true }, { x: 250, y: 580, width: 80, height: 20, visible: true }, { x: 350, y: 550, width: 80, height: 20, visible: true } ], spikes: [ { x: 0, y: 580, width: 800, triangleHeight: 10, deadly: true }, { x: 380, y: 470, width: 20, triangleHeight: 10, deadly: true } ], coins: [ { x: 490, y: 440, real: false }, { x: 370, y: 510, real: true } ], signs: [ {x: 420, y: 450, text: "SAFE PATH!"} ], specialElements: [ { type: 'visualCue', x: 365, y: 480, cueType: 'faintGlowDownward' } ] },
+            5: { startX: 50, startY: 500, platforms: [ { x: 0, y: 580, width: 150, height: 20, visible: true }, { x: 300, y: 480, width: 200, height: 20, visible: true }, { x: 550, y: 430, width: 200, height: 20, visible: true } ], spikes: [], coins: [{ x: 620, y: 400, real: true }], signs: [ { x: 350, y: 440, text: "DON'T GO RIGHT!" }, { x: 500, y: 410, text: "DANGER AHEAD!" } ], specialElements: [] },
+            6: { startX: 50, startY: 500, platforms: [ { x: 0, y: 580, width: 100, height: 20, visible: true }, { x: 200, y: 480, width: 80, height: 20, visible: false, appearing: true }, { x: 350, y: 380, width: 80, height: 20, visible: false, appearing: true }, { x: 500, y: 280, width: 80, height: 20, visible: false, appearing: true }, { x: 650, y: 180, width: 150, height: 20, visible: true } ], spikes: [ { x: 0, y: 580, width: 800, triangleHeight: 10, deadly: true } ], coins: [{ x: 720, y: 140, real: true }], signs: [], specialElements: [] },
+            7: { startX: 50, startY: 540, platforms: [ { x: 0, y: 580, width: 120, height: 20, visible: true }, { x: 150, y: 550, width: 100, height: 20, visible: true }, { x: 300, y: 520, width: 150, height: 20, visible: true }, { x: 300, y: 440, width: 80, height: 20, visible: true }, { x: 420, y: 380, width: 100, height: 20, visible: true }, { x: 580, y: 380, width: 80, height: 20, visible: true, id: "breather" }, { x: 700, y: 440, width: 100, height: 20, visible: true }, { x: 620, y: 500, width: 150, height: 20, visible: true } ], spikes: [ { x: 130, y: 570, width: 15, triangleHeight: 10, deadly: true }, { x: 260, y: 540, width: 30, triangleHeight: 10, deadly: true }, { x: 530, y: 410, width: 40, triangleHeight: 10, deadly: true }, { x: 670, y: 470, width: 20, triangleHeight: 10, deadly: true } ], coins: [{ x: 680, y: 460, real: true }], signs: [ {x: 350, y: 480, text: "CONTROLS FLIPPED!"}, {x: 700, y: 390, text: "FLIPPED AGAIN!"} ], specialElements: [ { type: 'controlReversal', x: 270, y: 0, width: 300, height: 600 }, { type: 'controlReversal', x: 670, y: 0, width: 130, height: 600 } ] },
+            8: { startX: 50, startY: 540, platforms: [ { x: 0, y: 580, width: 100, height: 20, visible: true }, { x: 130, y: 540, width: 100, height: 20, visible: true }, { x: 260, y: 500, width: 100, height: 20, visible: true, id: "entryPlatform" }, { x: 400, y: 500, width: 150, height: 20, visible: true, id: "illusionFloorPlatform", isIllusory: true }, { x: 450, y: 400, width: 80, height: 20, visible: true }, { x: 400, y: 580, width: 80, height: 20, visible: true }, { x: 500, y: 550, width: 80, height: 20, visible: true }, { x: 600, y: 520, width: 120, height: 20, visible: true } ], spikes: [ { x: 460, y: 410, width: 60, triangleHeight: 10, deadly: true } ], coins: [ { x: 470, y: 360, real: false }, { x: 650, y: 480, real: true } ], signs: [ { x: 200, y: 510, text: "SEEK THE UNSEEN" }, { x: 420, y: 470, text: "NO WAY DOWN..." } ], specialElements: [ { type: 'solidWall', x: 360, y: 400, width: 20, height: 100 }, { type: 'illusoryWall', x: 360, y: 300, width: 20, height: 100 } ] },
+            9: { startX: 50, startY: 540, platforms: [ { x: 0, y: 580, width: 150, height: 20, visible: true, id: "startPlatform" }, { x: 650, y: 580, width: 150, height: 20, visible: true, id: "otherPlatform" } ], spikes: [ { x: 150, y: 570, width: 500, triangleHeight: 10, deadly: true } ], coins: [{ x: 400, y: 250, initialY: 250, real: true, moving: true, speed: 3, amplitude: 150, requiresPatience: true, patienceTimer: 0, patienceThreshold: 120, targetY: 535, isDescending: false }], signs: [ { x: 50, y: 540, text: "CATCH THE COIN!" }, { x: 680, y: 540, text: "OR IS IT OVER HERE?" }, { x: 300, y: 100, text: "PATIENCE IS KEY..." } ], specialElements: [] },
+            10: { startX: 70, startY: 450, platforms: [ { x: 50, y: 480, width: 100, height: 20, visible: true, id: "L10_Start" }, { x: 200, y: 480, width: 100, height: 20, visible: true, id: "L10_Fake_Approach" }, { x: 320, y: 430, width: 80, height: 20, visible: true, id: "L10_Fake_Coin_Holder" }, { x: 20, y: 350, width: 80, height: 20, visible: true, id: "L10_Grav_1" },  { x: 20, y: 220, width: 80, height: 20, visible: true, id: "L10_Grav_2" }, { x: 120, y: 150, width:100, height:20, visible: true, id: "L10_Transition_To_Ctrl" }, { x: 250, y: 150, width:80, height:20, visible: true, id: "L10_Ctrl_Approach" }, { x: 350, y: 200, width:50, height:20, visible: true, id:"R_Pedestal_L10" }, { x: 450, y:200, width:80, height:20, visible:false, id:"L10_Rev_1" }, { x: 550, y:180, width:80, height:20, visible:false, id:"L10_Rev_2" }, { x: 650, y:150, width:80, height:20, visible: true, id: "L10_Final_Coin_Holder" } ], spikes: [ { x: 320, y: 420, width: 80, triangleHeight: 10, deadly: true, id: "L10_Spike_Under_Fake" }, { x: 0, y: 580, width: 800, triangleHeight: 10, deadly: true }, { x: 630, y: 140, width:20, triangleHeight: 10, deadly:true, id:"L10_Spike_Near_Real_Coin"} ], coins: [ { x: 340, y: 390, real: false, id: "L10_Fake_Coin" }, { x: 670, y: 110, real: true, id: "L10_Real_Coin" } ], signs: [ { x: 60, y: 450, text: "PRESS R TO WIN! ->" }, { x: 220, y: 450, text: "THE END IS NEAR!"}, { x: 10, y: 320, text: "Feeling... contrary?" }, { x: 230, y: 130, text: "Lost your head?" }, { x: 310, y: 180, text: "R you sure? Stand FIRM.", id: "L10_Pedestal_Sign" } ], specialElements: [ { type: 'gravityReversal', x: -30, y: 0, width: 180, height: 600, id: "L10_GravZone" }, { type: 'controlReversal', x: 120, y: 0, width: 400, height: 300, id: "L10_CtrlZone" } ] }
+        };
+        
+        const touchLeftButton = document.getElementById('touchLeft'); const touchRightButton = document.getElementById('touchRight');
+        const touchJumpButton = document.getElementById('touchJump'); const touchRestartButton = document.getElementById('touchRestart');
+        const touchControlsContainer = document.getElementById('touchControlsContainer');
+
+        function performRestartAction() {
+            if (gameState.currentLevel === 10 && gameState.player.alive && !gameState.levelComplete) {
+                const pedestal = levels[10].platforms.find(p => p.id === "R_Pedestal_L10"); let onPedestal = false; const p_player = gameState.player; 
+                if (pedestal && p_player.grounded) { if (p_player.y + p_player.height >= pedestal.y && p_player.y + p_player.height <= pedestal.y + 5 && p_player.x + p_player.width > pedestal.x && p_player.x < pedestal.x + pedestal.width) onPedestal = true; }
+                const l10State = gameState.levelStates[10] || { rPressedOnPedestal: false };
+                if (onPedestal && !l10State.rPressedOnPedestal) {
+                    if (!gameState.levelStates[10]) gameState.levelStates[10] = {}; gameState.levelStates[10].rPressedOnPedestal = true;
+                    const revealedPlat1 = levels[10].platforms.find(p => p.id === "L10_Rev_1"); if (revealedPlat1) revealedPlat1.visible = true;
+                    const revealedPlat2 = levels[10].platforms.find(p => p.id === "L10_Rev_2"); if (revealedPlat2) revealedPlat2.visible = true;
+                    const pedestalSign = levels[10].signs.find(s => s.id === "L10_Pedestal_Sign"); if (pedestalSign) pedestalSign.text = "The way is open.";
+                    updateUI(); return; 
+                } else if (!l10State.rPressedOnPedestal) { killPlayer("Betrayed by 'R'!"); return; }
+            }
+            if (gameState.player.alive && !gameState.levelComplete) killPlayer("Restarted mid-level."); else restartLevel();
+        }
+
+        function updateUI() {
+            document.getElementById('currentLevel').textContent = gameState.currentLevel; document.getElementById('totalLevels').textContent = TOTAL_LEVELS; document.getElementById('deathCount').textContent = gameState.deaths;
+            const levelData = levels[gameState.currentLevel]; const theme = levelThemes[gameState.currentLevel]; document.getElementById('levelTitle').textContent = theme ? theme.text : "A Deceptive Place";
+            const controlRDisplay = document.getElementById('controlR'); const touchRestartBtn = document.getElementById('touchRestart'); 
+            if (gameState.currentLevel === 10 && gameState.player.alive && !gameState.levelComplete) {
+                let onPedestalCurrently = false; const pedestal = levels[10].platforms.find(p => p.id === "R_Pedestal_L10"); const p = gameState.player;
+                if (pedestal && p.grounded) { if (p.y + p.height >= pedestal.y && p.y + p.height <= pedestal.y + 5 && p.x + p.width > pedestal.x && p.x < pedestal.x + pedestal.width) onPedestalCurrently = true; }
+                const l10State = gameState.levelStates[10] || { rPressedOnPedestal: false };
+                if (onPedestalCurrently && !l10State.rPressedOnPedestal) {
+                    controlRDisplay.innerHTML = "<strong>R - Reveal Truth?</strong>"; controlRDisplay.style.color = "#2ecc71"; controlRDisplay.style.textShadow = "0 0 5px #2ecc71";
+                    touchRestartBtn.innerHTML = "REVEAL?"; touchRestartBtn.style.color = "#2ecc71"; touchRestartBtn.style.borderColor = "#2ecc71";
+                } else if (!l10State.rPressedOnPedestal) { 
+                    controlRDisplay.innerHTML = "<strong>R - ??? WIN ???</strong>"; controlRDisplay.style.color = "#f1c40f"; controlRDisplay.style.textShadow = "0 0 5px #f1c40f";
+                    touchRestartBtn.innerHTML = "WIN?"; touchRestartBtn.style.color = "#f1c40f"; touchRestartBtn.style.borderColor = "#f1c40f";
+                } else { 
+                    controlRDisplay.innerHTML = "R - Restart Level"; controlRDisplay.style.color = "white"; controlRDisplay.style.textShadow = "none";
+                    touchRestartBtn.innerHTML = "RESTART"; touchRestartBtn.style.color = "white"; touchRestartBtn.style.borderColor = "rgba(255, 255, 255, 0.7)";
+                }
+            } else { 
+                controlRDisplay.innerHTML = "R - Restart Level"; controlRDisplay.style.color = "white"; controlRDisplay.style.textShadow = "none";
+                touchRestartBtn.innerHTML = "RESTART"; touchRestartBtn.style.color = "white"; touchRestartBtn.style.borderColor = "rgba(255, 255, 255, 0.7)";
+            }
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase(); gameState.keys[key] = true;
+            if (!gameState.gameStarted && (key === 'enter' || key === ' ')) {} 
+            else if (gameState.gameStarted && !gameState.gameFinished) {
+                if (key === 'r') performRestartAction();
+                if (key === ' ' && gameState.levelComplete) nextLevel();
+            }
+        });
+        document.addEventListener('keyup', (e) => { gameState.keys[e.key.toLowerCase()] = false; });
+
+        touchLeftButton.addEventListener('touchstart', (e) => { e.preventDefault(); gameState.keys['a'] = true; });
+        touchLeftButton.addEventListener('touchend', (e) => { e.preventDefault(); gameState.keys['a'] = false; });
+        touchRightButton.addEventListener('touchstart', (e) => { e.preventDefault(); gameState.keys['d'] = true; });
+        touchRightButton.addEventListener('touchend', (e) => { e.preventDefault(); gameState.keys['d'] = false; });
+        touchJumpButton.addEventListener('touchstart', (e) => { e.preventDefault(); gameState.keys['w'] = true; gameState.keys[' '] = true; if (gameState.levelComplete) nextLevel(); });
+        touchJumpButton.addEventListener('touchend', (e) => { e.preventDefault(); gameState.keys['w'] = false; gameState.keys[' '] = false; });
+        touchRestartButton.addEventListener('touchstart', (e) => { e.preventDefault(); performRestartAction(); });
+
+        function createParticle(x, y, color, isExplosion = false, options = {}) { 
+            const count = options.count || 1;
+            for (let i = 0; i < count; i++) {
+                const speedMultiplier = isExplosion ? (Math.random() * 1.5 + 1) : 1;
+                let pVelX = (Math.random() - 0.5) * 4 * speedMultiplier; let pVelY = (Math.random() - 0.5) * 4 * speedMultiplier - (isExplosion ? Math.random() * 3 + 2 : 0);
+                let pLife = PARTICLE_LIFE_BASE + (isExplosion ? Math.random()*10 + 5 : 0); let pSize = isExplosion ? (Math.random() * 2.5 + 1.5) : (Math.random() * 1.5 + 1);
+                if (options.type === 'jump_dust') { pVelX = (Math.random() - 0.5) * 2.5; pVelY = (gameState.gravityReversed ? JUMP_FORCE * 0.1 : -JUMP_FORCE * 0.1) * (Math.random() * 1.5 + 0.5); pLife = PARTICLE_LIFE_BASE * 0.5; pSize = Math.random() * 1 + 1; }
+                else if (options.type === 'land_dust') { pVelX = (Math.random() - 0.5) * 3.5; pVelY = (gameState.gravityReversed ? -JUMP_FORCE * 0.05 : JUMP_FORCE * 0.05) * (Math.random() * 1 + 0.3); pLife = PARTICLE_LIFE_BASE * 0.6; pSize = Math.random() * 1.5 + 1; }
+                gameState.particles.push({ x: x + (Math.random() - 0.5) * (options.spread || 5), y: y + (Math.random() - 0.5) * (options.spread || 5), velX: pVelX, velY: pVelY, life: pLife, color: color, size: pSize });
+            }
+        }
+        function updateParticles() { gameState.particles = gameState.particles.filter(p => { p.x += p.velX; p.y += p.velY; p.velY += GRAVITY * 0.2; p.life--; p.velX *= 0.97; p.velY *= 0.97; return p.life > 0; }); }
+        function drawParticles() { gameState.particles.forEach(p => { ctx.save(); ctx.globalAlpha = Math.max(0, p.life / PARTICLE_LIFE_BASE); ctx.fillStyle = p.color; ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size); ctx.restore(); }); }
+        function drawPlayer() { 
+            const p = gameState.player; if (!p.alive) return; let strokeStyle = '#fff'; let currentEffectiveGravityReversed = false; let currentEffectiveControlsReversed = false;
+            const level = levels[gameState.currentLevel];
+            if (level && level.specialElements) { level.specialElements.forEach(el => { if (p.x < el.x + el.width && p.x + p.width > el.x && p.y < el.y + el.height && p.y + p.height > el.y) { if (el.type === 'gravityReversal') currentEffectiveGravityReversed = true; if (el.type === 'controlReversal') currentEffectiveControlsReversed = true; } }); }
+            if (currentEffectiveControlsReversed && currentEffectiveGravityReversed) strokeStyle = '#cc99ff'; else if (currentEffectiveControlsReversed) strokeStyle = '#ff9999'; else if (currentEffectiveGravityReversed) strokeStyle = '#99ff99'; 
+            ctx.strokeStyle = strokeStyle; ctx.lineWidth = 3; ctx.lineCap = 'round'; const centerX = p.x + p.width / 2;
+            ctx.beginPath(); ctx.arc(centerX, p.y + 8, 6, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(centerX, p.y + 14); ctx.lineTo(centerX, p.y + 24); ctx.stroke();
+            const armBaseY = p.y + 18; const armAngle = p.grounded && p.velX === 0 ? Math.PI / 3.5 : Math.sin(Date.now() * 0.015 + (p.velX * 0.1)) * Math.PI / 5 + Math.PI / 3; const armLength = 7;
+            ctx.beginPath(); ctx.moveTo(centerX, armBaseY); ctx.lineTo(centerX - Math.cos(armAngle) * armLength, armBaseY + Math.sin(armAngle) * armLength * 0.8); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(centerX, armBaseY); ctx.lineTo(centerX + Math.cos(armAngle) * armLength, armBaseY + Math.sin(armAngle) * armLength * 0.8); ctx.stroke();
+            const legBaseY = p.y + 24; const legLength = 6.5; let legAngleOffset = 0; if (!p.grounded) legAngleOffset = Math.PI / 5; else if (p.velX !== 0) legAngleOffset = Math.sin(Date.now() * 0.025) * Math.PI / 4.5; 
+            ctx.beginPath(); ctx.moveTo(centerX, legBaseY); ctx.lineTo(centerX - legLength * Math.sin(Math.PI / 4 + legAngleOffset), legBaseY + legLength * Math.cos(Math.PI / 4 + legAngleOffset)); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(centerX, legBaseY); ctx.lineTo(centerX + legLength * Math.sin(Math.PI / 4 - legAngleOffset), legBaseY + legLength * Math.cos(Math.PI / 4 - legAngleOffset)); ctx.stroke();
+        }
+        function drawLevel() { 
+            const level = levels[gameState.currentLevel]; const theme = levelThemes[gameState.currentLevel]; const levelState = gameState.levelStates[gameState.currentLevel] || {};
+            ctx.fillStyle = theme.bg; ctx.fillRect(0, 0, canvas.width, canvas.height); let allPlatforms = [...level.platforms];
+            allPlatforms.forEach(platform => { let isVisible = platform.visible; if (isVisible) { if (platform.isIllusory) { ctx.save(); ctx.fillStyle = `rgba(100, 100, 180, ${0.25 + Math.sin(Date.now()*0.002)*0.10})`; ctx.fillRect(platform.x, platform.y, platform.width, platform.height); ctx.strokeStyle = `rgba(150, 150, 220, ${0.3 + Math.sin(Date.now()*0.0025)*0.05})`; ctx.lineWidth = 1; ctx.strokeRect(platform.x, platform.y, platform.width, platform.height); for(let i = 0; i < platform.width; i += 8) { ctx.beginPath(); const wave = Math.sin(Date.now()*0.0015 + i*0.1)*1.5; ctx.moveTo(platform.x + i, platform.y + platform.height/2 + wave); ctx.lineTo(platform.x + i + 4, platform.y + platform.height/2 - wave); ctx.stroke(); } ctx.restore(); } else { ctx.fillStyle = platform.crumbling && platform.timer < platform.originalTimer * 0.5 && platform.timer > 0 ? '#c07010' : theme.accent; if (platform.crumbling && platform.timer < platform.originalTimer * 0.25 && Math.floor(Date.now()/100)%2 === 0 && platform.timer > 0) {} else if (platform.timer <= 0 && platform.crumbling) {} else { ctx.fillRect(platform.x, platform.y, platform.width, platform.height); } if (!(platform.timer <= 0 && platform.crumbling)) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(platform.x, platform.y, platform.width, platform.height); } } } else if (platform.isCollidableInvisible && gameState.currentLevel === 1 && platform.id === "invisible_plat_L1") {} });
+            let allSpikes = [...level.spikes]; allSpikes.forEach(spike => { const spikeTipY = spike.y; const actualTriangleHeight = spike.triangleHeight || SPIKE_TRIANGLE_HEIGHT; const spikeBaseY = spike.y + actualTriangleHeight; ctx.fillStyle = spike.deadly ? '#ff3742' : '#26d766'; for (let i = 0; i < spike.width; i += 15) { ctx.beginPath(); ctx.moveTo(spike.x + i, spikeBaseY); ctx.lineTo(spike.x + i + 7.5, spikeTipY); ctx.lineTo(spike.x + i + 15, spikeBaseY); ctx.fill(); } });
+            level.coins.forEach(coin => { let cX = coin.x; let currentCoinY = coin.y; if (coin.moving) cX = coin.x + Math.sin(Date.now() * 0.001 * (coin.speed || 5)) * (coin.amplitude || 50); let coinFillStyle = coin.real ? '#f1c40f' : '#e74c3c'; let coinSymbol = coin.real ? '$' : '!'; ctx.fillStyle = coinFillStyle; ctx.beginPath(); ctx.arc(cX + 15, currentCoinY + 15, 12, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = coin.real ? '#4a3200' : '#fff'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.fillText(coinSymbol, cX + 15, currentCoinY + 20);  });
+            let allSigns = [...level.signs]; allSigns.forEach(sign => { if (sign.visible === false) return; const textToDisplay = sign.text; if (!textToDisplay) return; const textWidth = ctx.measureText(textToDisplay).width; ctx.fillStyle = 'rgba(40, 20, 0, 0.85)'; ctx.fillRect(sign.x - 10, sign.y - 25, textWidth + 20, 30); ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 3; ctx.strokeRect(sign.x - 10, sign.y - 25, textWidth + 20, 30); ctx.fillStyle = '#fff0d0'; ctx.font = '13px Courier New'; ctx.textAlign = 'left'; ctx.fillText(textToDisplay, sign.x, sign.y - 7); });
+            level.specialElements.forEach(el => { ctx.save(); if (el.type === 'controlReversal' || el.type === 'gravityReversal') { let isActive = false; let pInZone = gameState.player.x < el.x + el.width && gameState.player.x + gameState.player.width > el.x && gameState.player.y < el.y + el.height && gameState.player.y + gameState.player.height > el.y; if (el.type === 'controlReversal' && pInZone) isActive = true; if (el.type === 'gravityReversal' && pInZone) isActive = true; ctx.fillStyle = isActive ? (el.type === 'controlReversal' ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,0,0.1)') : (el.type === 'controlReversal' ? 'rgba(255,0,0,0.05)' : 'rgba(0,255,0,0.05)'); ctx.fillRect(el.x, el.y, el.width, el.height); } else if (el.type === 'illusoryWall') { ctx.fillStyle = `rgba(100,100,180,${0.15+Math.sin(Date.now()*0.002)*0.05})`; ctx.fillRect(el.x,el.y,el.width,el.height); ctx.strokeStyle=`rgba(150,150,220,${0.2+Math.sin(Date.now()*0.0025)*0.05})`; ctx.lineWidth=1; for(let i=0;i<el.height;i+=6){ctx.beginPath();const wave=Math.sin(Date.now()*0.0015+i*0.1)*2.5;ctx.moveTo(el.x+wave,el.y+i);ctx.lineTo(el.x+el.width-wave,el.y+i);ctx.stroke();} } else if (el.type === 'solidWall') { ctx.fillStyle = theme.accent; ctx.fillRect(el.x, el.y, el.width, el.height); } else if (el.type === 'visualCue') { if (el.cueType === 'faintGlowDownward') { ctx.globalAlpha = 0.15 + Math.sin(Date.now()*0.004)*0.1; ctx.fillStyle = '#e0e0ff'; ctx.beginPath(); ctx.moveTo(el.x-5,el.y); ctx.lineTo(el.x+5,el.y); ctx.lineTo(el.x,el.y+8); ctx.closePath(); ctx.fill(); } else if (el.cueType === 'faintPlatformOutline' && levelState.cueVisible && levelState.targetPlatformId === el.targetPlatformId) { const targetPlat = allPlatforms.find(p => p.id === el.targetPlatformId); if (targetPlat) { ctx.globalAlpha = levelState.cueAlpha; ctx.strokeStyle = '#d0d0f0'; ctx.lineWidth = 2; ctx.strokeRect(targetPlat.x, targetPlat.y, targetPlat.width, targetPlat.height); } } } ctx.restore(); });
+        }
+        function updateLevelSpecificLogic() { 
+            const p = gameState.player; const level = levels[gameState.currentLevel]; if (!gameState.levelStates[gameState.currentLevel]) gameState.levelStates[gameState.currentLevel] = {}; const levelState = gameState.levelStates[gameState.currentLevel];
+            if (gameState.currentLevel === 1) { const cueElement = level.specialElements.find(el => el.type === 'visualCue' && el.cueType === 'faintPlatformOutline'); if (cueElement) { if (levelState.lastCueTime === undefined) levelState.lastCueTime = gameState.frameCount; if (gameState.frameCount >= levelState.lastCueTime + cueElement.interval ) { levelState.cueVisible = true; levelState.lastCueTime = gameState.frameCount; levelState.cueEndTime = gameState.frameCount + cueElement.duration; levelState.targetPlatformId = cueElement.targetPlatformId; } if (levelState.cueVisible) { if (gameState.frameCount < levelState.cueEndTime) levelState.cueAlpha = 0.3 + Math.sin( (gameState.frameCount - levelState.lastCueTime) * Math.PI / cueElement.duration ) * 0.3; else { levelState.cueVisible = false; levelState.cueAlpha = 0; } } } }
+            if (gameState.currentLevel === 9) { const coin = level.coins[0]; if (coin.requiresPatience) { const pKey = gameState.keys['a'] || gameState.keys['d'] || gameState.keys['w'] || gameState.keys[' ']; const pVel = Math.abs(p.velX) > 0.2 || Math.abs(p.velY) > 0.2; const pMoving = pKey || (pVel && !p.grounded); if (!coin.isDescending) { if (!pMoving && p.grounded) coin.patienceTimer++; else coin.patienceTimer = 0; if (coin.patienceTimer >= coin.patienceThreshold) coin.isDescending = true;  } if (coin.isDescending) { if (coin.y < coin.targetY) { coin.y += 0.5; if (coin.y > coin.targetY) coin.y = coin.targetY; } else if (coin.y > coin.targetY) { coin.y = coin.targetY; } } } }
+        }
+        function updatePlayer() { 
+            const p = gameState.player; const level = levels[gameState.currentLevel]; if (!p.alive) return; updateLevelSpecificLogic(); 
+            let cFrameCtrlRev = false; let cFrameGravRev = false;  
+            if (level.specialElements) { level.specialElements.forEach(el => { if (p.x < el.x + el.width && p.x + p.width > el.x && p.y < el.y + el.height && p.y + p.height > el.y) { if (el.type === 'controlReversal') cFrameCtrlRev = true; if (el.type === 'gravityReversal') cFrameGravRev = true; } }); gameState.controlsReversed = cFrameCtrlRev; gameState.gravityReversed = cFrameGravRev; } else { gameState.controlsReversed = false; gameState.gravityReversed = false; }
+            const G_EFFECT = cFrameGravRev ? -GRAVITY : GRAVITY; const JUMP_VEL_EFFECT = cFrameGravRev ? JUMP_FORCE : -JUMP_FORCE;
+            const activeKeys = gameState.keys; const leftKey = cFrameCtrlRev ? 'd' : 'a'; const rightKey = cFrameCtrlRev ? 'a' : 'd';
+            if (activeKeys[leftKey]) p.velX = -PLAYER_SPEED; else if (activeKeys[rightKey]) p.velX = PLAYER_SPEED; else p.velX *= 0.85; 
+            if ((activeKeys['w'] || activeKeys[' ']) && p.grounded) { p.velY = JUMP_VEL_EFFECT; p.grounded = false; const particleY = cFrameGravRev ? p.y : p.y + p.height; createParticle(p.x + p.width / 2, particleY, '#ddd', false, { type: 'jump_dust', count: 5, spread: 8 }); }
+            p.velY += G_EFFECT; p.x += p.velX; p.y += p.velY;
+            let onAnyPlatform = false; let allPlatforms = [...level.platforms];
+            allPlatforms.forEach(platform => { let isVisCollision = platform.visible; if ((isVisCollision || platform.isCollidableInvisible) && !platform.isIllusory && !(platform.timer <= 0 && platform.crumbling) && p.x < platform.x + platform.width && p.x + p.width > platform.x && p.y < platform.y + platform.height && p.y + p.height > platform.y) {
+                if (platform.crumbling) { let pOnTop = false; if (!cFrameGravRev && p.y + p.height >= platform.y && p.y + p.height <= platform.y + Math.abs(p.velY) + 1) pOnTop = true; else if (cFrameGravRev && p.y <= platform.y + platform.height && p.y >= platform.y + platform.height - (Math.abs(p.velY) + 1) ) pOnTop = true; let shouldCrumble = false; if (pOnTop && p.grounded) { if (platform.proximityTrigger && platform.timer === platform.originalTimer) { const pCX = p.x + p.width / 2; const platCX = platform.x + platform.width / 2; const dist = Math.abs(pCX - platCX); if (dist < (platform.triggerDist || 70) && ( (!cFrameGravRev && Math.abs((p.y + p.height) - platform.y) < 10) || (cFrameGravRev && Math.abs(p.y - (platform.y + platform.height)) < 10) ) ) { shouldCrumble = true; } } else if (!platform.proximityTrigger) {  shouldCrumble = true; } } if ((shouldCrumble || platform.timer < platform.originalTimer) && platform.timer > 0) { platform.timer--; if (platform.timer <= 0) platform.visible = false; } }
+                if (!cFrameGravRev) { if (p.velY > 0 && (p.y + p.height - p.velY) <= platform.y) { if (!p.grounded) createParticle(p.x+p.width/2,platform.y,'#ccc',false,{type:'land_dust',count:3,spread:10}); p.y=platform.y-p.height;p.velY=0;p.grounded=true;onAnyPlatform=true;} else if (p.velY<0 && (p.y-p.velY)>=platform.y+platform.height){p.y=platform.y+platform.height;p.velY=0;}}
+                else { if (p.velY < 0 && (p.y - p.velY) >= platform.y + platform.height) { if (!p.grounded) createParticle(p.x+p.width/2,platform.y+platform.height,'#ccc',false,{type:'land_dust',count:3,spread:10}); p.y=platform.y+platform.height;p.velY=0;p.grounded=true;onAnyPlatform=true;} else if (p.velY > 0 && (p.y + p.height - p.velY) <= platform.y) {p.y = platform.y - p.height;p.velY = 0;}}
+                if(p.y+p.height>platform.y && p.y<platform.y+platform.height){if(p.velX>0 && (p.x+p.width-p.velX)<=platform.x){p.x=platform.x-p.width;p.velX=0;}else if(p.velX<0 && (p.x-p.velX)>=platform.x+platform.width){p.x=platform.x+platform.width;p.velX=0;}}
+            }});
+            if (!onAnyPlatform) p.grounded = false;
+            level.platforms.forEach(platform => { if (platform.appearing && !platform.visible) { const dist = Math.hypot(p.x - platform.x, p.y - platform.y); if (dist < 120) platform.visible = true; } });
+            let allSpikes = [...level.spikes]; allSpikes.forEach(spike => { const spikeTipY = spike.y; const actualTriangleHeight = spike.triangleHeight || SPIKE_TRIANGLE_HEIGHT; const spikeBaseY = spike.y + actualTriangleHeight; if (spike.deadly && p.x < spike.x + spike.width && p.x + p.width > spike.x && p.y < spikeBaseY && p.y + p.height > spikeTipY) { killPlayer("Hit a deadly spike!"); } });
+            level.coins.forEach(coin => { let cX = coin.x; if (coin.moving) cX = coin.x + Math.sin(Date.now() * 0.001 * (coin.speed || 5)) * (coin.amplitude || 50); if (p.x < cX + 30 && p.x + p.width > cX && p.y < coin.y + 30 && p.y + p.height > coin.y) { if (coin.real) { let canCollect = true; if (gameState.currentLevel === 9 && coin.requiresPatience && !coin.isDescending && coin.patienceTimer < coin.patienceThreshold) canCollect = false; if (canCollect) { completeLevel(); createParticle(cX + 15, coin.y + 15, '#f1c40f', true, { count: 20, spread: 5 }); } } else { killPlayer("That's a fake coin!"); } } });
+            level.specialElements.forEach(el => { if ((el.type === 'invisibleWall' || el.type === 'solidWall') && p.x < el.x + el.width && p.x + p.width > el.x && p.y < el.y + el.height && p.y + p.height > el.y) { const overlapX = (p.x + p.width/2) - (el.x + el.width/2); const overlapY = (p.y + p.height/2) - (el.y + el.height/2); const combHalfW = p.width/2 + el.width/2; const combHalfH = p.height/2 + el.height/2; if(Math.abs(overlapX) < combHalfW && Math.abs(overlapY) < combHalfH){ const offX = combHalfW - Math.abs(overlapX); const offY = combHalfH - Math.abs(overlapY); if(offX < offY){ if(overlapX > 0) p.x += offX; else p.x -= offX; p.velX = 0; } else { const oldVelY = p.velY; if(overlapY > 0) { p.y += offY; if (!cFrameGravRev && oldVelY < 0) p.velY = 0; } else { p.y -= offY; if (cFrameGravRev && oldVelY > 0) p.velY = 0; } if (!cFrameGravRev && oldVelY > 0 && overlapY < 0) { p.grounded = true; p.velY = 0; if (!onAnyPlatform) createParticle(p.x+p.width/2,el.y,'#ccc',false,{type:'land_dust',count:2,spread:8}); } else if (cFrameGravRev && oldVelY < 0 && overlapY > 0) { p.grounded = true; p.velY = 0; if (!onAnyPlatform) createParticle(p.x+p.width/2,el.y+el.height,'#ccc',false,{type:'land_dust',count:2,spread:8}); } } } } });
+            if (p.x < 0) { p.x = 0; p.velX = 0; } if (p.x + p.width > canvas.width) { p.x = canvas.width - p.width; p.velX = 0; }
+            const bottomDeathY = canvas.height + p.height * 2; const topDeathY = -p.height * 3; if ((!cFrameGravRev && p.y > bottomDeathY) || (cFrameGravRev && p.y < topDeathY)) { killPlayer("Fell out of the world!"); }
+        }
+        function killPlayer(reason = "") { if (!gameState.player.alive) return; gameState.player.alive = false; gameState.deaths++; updateUI(); document.getElementById('deathReason').textContent = reason; document.getElementById('deathMessage').classList.remove('hidden'); createParticle(gameState.player.x + gameState.player.width / 2, gameState.player.y + gameState.player.height / 2, '#ff4757', true, { count: 30, spread: 10 }); }
+        function completeLevel() { if (gameState.levelComplete) return; gameState.levelComplete = true; document.getElementById('victoryMessage').classList.remove('hidden'); }
+        function initLevelForRestart() { 
+            const levelData = levels[gameState.currentLevel]; if (!levelData) return;
+            levelData.platforms.forEach(platform => { if (platform.crumbling) { platform.timer = platform.originalTimer; platform.visible = true; } if (platform.appearing) platform.visible = false; });
+            if (gameState.currentLevel === 10) { if (!gameState.levelStates[10]) gameState.levelStates[10] = {}; gameState.levelStates[10].rPressedOnPedestal = false; const revPlat1 = levelData.platforms.find(p=>p.id==="L10_Rev_1"); if(revPlat1) revPlat1.visible=false; const revPlat2 = levelData.platforms.find(p=>p.id==="L10_Rev_2"); if(revPlat2)revPlat2.visible=false; const pedSign = levelData.signs.find(s=>s.id==="L10_Pedestal_Sign"); if(pedSign)pedSign.text="R you sure? Stand FIRM."; }
+            if (!gameState.levelStates[gameState.currentLevel]) gameState.levelStates[gameState.currentLevel] = {}; const levelState = gameState.levelStates[gameState.currentLevel]; 
+            if (gameState.currentLevel === 1) { levelState.cueAlpha = 0; levelState.cueVisible = false; levelState.lastCueTime = gameState.frameCount; levelState.targetPlatformId = null; }
+            if (gameState.currentLevel === 9 && levelData.coins[0] && levelData.coins[0].requiresPatience) { const coin = levelData.coins[0]; coin.y = coin.initialY; coin.patienceTimer = 0; coin.isDescending = false; }
+        }
+        function restartLevel() { 
+            document.getElementById('deathMessage').classList.add('hidden'); document.getElementById('deathReason').textContent = ""; document.getElementById('victoryMessage').classList.add('hidden');
+            const levelData = levels[gameState.currentLevel]; gameState.player = { x: levelData.startX || 50, y: levelData.startY || 500, width: 20, height: 30, velX: 0, velY: 0, grounded: false, alive: true };
+            gameState.levelComplete = false; gameState.controlsReversed = false; gameState.gravityReversed = false; gameState.particles = [];
+            initLevelForRestart(); updateUI();
+        }
+        function nextLevel() { 
+            document.getElementById('victoryMessage').classList.add('hidden');
+            if (gameState.currentLevel < TOTAL_LEVELS) {
+                gameState.currentLevel++; if (!gameState.levelStates[gameState.currentLevel]) gameState.levelStates[gameState.currentLevel] = {};
+                if (gameState.currentLevel === 1 && !gameState.levelStates[1]) gameState.levelStates[1] = { cueAlpha: 0, cueVisible: false, lastCueTime: 0 };
+                if (gameState.currentLevel === 10 && !gameState.levelStates[10]) gameState.levelStates[10] = { rPressedOnPedestal: false };
+                restartLevel();
+            } else {
+                gameState.gameFinished = true; document.getElementById('finalDeathCount').textContent = gameState.deaths;
+                document.getElementById('gameOverScreen').classList.remove('hidden'); document.getElementById('gameCanvas').classList.add('hidden');
+                document.getElementById('ui').classList.add('hidden'); document.getElementById('controls').classList.add('hidden');
+                document.getElementById('developer').classList.add('hidden'); touchControlsContainer.classList.add('hidden'); 
+                document.body.classList.remove('touch-enabled');
+            }
+        }
+        
+        function gameLoop() { gameState.frameCount++; if (!gameState.gameStarted || gameState.gameFinished) { requestAnimationFrame(gameLoop); return; } ctx.clearRect(0, 0, canvas.width, canvas.height); if (gameState.player.alive && !gameState.levelComplete) updatePlayer(); updateParticles(); drawLevel(); if(gameState.player.alive) drawPlayer(); drawParticles(); requestAnimationFrame(gameLoop); }
+        function startGameFlow() {
+            gameState.gameStarted = true; document.getElementById('titleScreen').classList.add('hidden');
+            document.getElementById('gameCanvas').classList.remove('hidden'); document.getElementById('ui').classList.remove('hidden');
+            document.getElementById('controls').classList.remove('hidden'); document.getElementById('developer').classList.remove('hidden');
+            touchControlsContainer.classList.remove('hidden'); document.body.classList.add('touch-enabled');
+            if (!gameState.levelStates[1]) gameState.levelStates[1] = { cueAlpha: 0, cueVisible: false, lastCueTime: 0 };
+            if (gameState.currentLevel === 10 && !gameState.levelStates[10]) gameState.levelStates[10] = { rPressedOnPedestal: false };
+            restartLevel(); gameLoop();
+        }
+        
+        document.getElementById('startButton').addEventListener('click', startGameFlow);
+        document.getElementById('restartGameButton').addEventListener('click', () => {
+            gameState.currentLevel = 1; gameState.deaths = 0; gameState.gameFinished = false; gameState.frameCount = 0;
+            gameState.levelStates = { 1: { cueAlpha: 0, cueVisible: false, lastCueTime: 0 }, 10: { rPressedOnPedestal: false } };
+            document.getElementById('gameOverScreen').classList.add('hidden'); startGameFlow(); 
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (levels[10] && levels[10].spikes[1]) levels[10].spikes[1].width = canvas.width;
+            if (levels[10] && levels[10].specialElements[0]) levels[10].specialElements[0].height = canvas.height;
+            document.getElementById('gameCanvas').classList.add('hidden'); document.getElementById('ui').classList.add('hidden');
+            document.getElementById('controls').classList.add('hidden'); document.getElementById('developer').classList.add('hidden');
+            document.getElementById('titleScreen').classList.remove('hidden'); touchControlsContainer.classList.add('hidden'); 
+            updateUI(); 
+        });
+    </script>
+</body>
+</html>
